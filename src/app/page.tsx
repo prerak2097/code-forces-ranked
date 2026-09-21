@@ -1,69 +1,143 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Dices, Sparkles, Target, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { DrawButton } from "@/components/app/draw-button";
+import { PracticeClient } from "@/components/app/practice-client";
+import { RatingBadge } from "@/components/app/rating-badge";
+import {
+  getActiveAttempt,
+  getProblemPoolStats,
+  getRecentForm,
+  getSettings,
+} from "@/lib/queries";
+import { CALIBRATION_ATTEMPTS } from "@/lib/rating";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function PracticePage() {
+  const [cfg, active, recent, pool] = await Promise.all([
+    getSettings(),
+    getActiveAttempt(),
+    getRecentForm(),
+    getProblemPoolStats(),
+  ]);
+
+  const pomodoro = {
+    workMin: cfg.pomodoroWorkMin,
+    shortBreakMin: cfg.pomodoroShortBreakMin,
+    longBreakMin: cfg.pomodoroLongBreakMin,
+    rounds: cfg.pomodoroRounds,
+    autoStartBreaks: cfg.pomodoroAutoStartBreaks,
+    autoStartWork: cfg.pomodoroAutoStartWork,
+    sound: cfg.pomodoroSound,
+  };
+
+  if (active) {
+    return (
+      <PracticeClient
+        attemptId={active.attempt.id}
+        problem={{
+          contestId: active.problem.contestId,
+          index: active.problem.index,
+          name: active.problem.name,
+          rating: active.attempt.problemRating,
+          tags: active.attempt.problemTags,
+          solvedCount: active.problem.solvedCount,
+        }}
+        attempt={{
+          tagsRevealed: active.attempt.tagsRevealed,
+          budgetSec: active.attempt.budgetSec,
+        }}
+        workspace={{
+          markdown: active.note?.markdown ?? "",
+          code: active.note?.code ?? "",
+          language: active.note?.language ?? "cpp",
+          excalidrawUrl: active.note?.excalidrawUrl ?? "",
+        }}
+        pomodoro={pomodoro}
+        rating={cfg.rating}
+        recent={recent}
+        gradedAttempts={cfg.gradedAttempts}
+        targetSolveRate={cfg.targetSolveRate}
+        calibrationRemaining={Math.max(0, CALIBRATION_ATTEMPTS - cfg.gradedAttempts)}
+      />
+    );
+  }
+
+  const empty = pool.total === 0;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="mx-auto max-w-2xl space-y-6 py-10">
+      <div className="space-y-3 text-center">
+        <div className="mx-auto grid size-12 place-items-center rounded-xl bg-muted">
+          <Dices className="size-6" />
+        </div>
+        <h1 className="text-2xl font-semibold tracking-tight">Ready for the next one</h1>
+        <p className="text-sm text-muted-foreground">
+          {empty
+            ? "Sync the Codeforces problemset to get started."
+            : `Drawing from ${pool.available.toLocaleString()} unsolved problems rated ${pool.lo}–${pool.hi}.`}
+        </p>
+      </div>
+
+      <div className="flex justify-center">
+        <RatingBadge rating={cfg.rating} peakRating={cfg.peakRating} size="lg" />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat icon={Target} label="Window" value={`±${cfg.ratingWindow}`} />
+        <Stat
+          icon={TrendingUp}
+          label="Mode"
+          value={
+            cfg.selectionMode === "weakness"
+              ? "Weakness"
+              : cfg.selectionMode === "ascending"
+                ? "Ascending"
+                : "Balanced"
+          }
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+        <Stat icon={Sparkles} label="Graded" value={String(cfg.gradedAttempts)} />
+      </div>
+
+      <div className="flex flex-col items-center gap-3">
+        {empty ? (
+          <Button size="lg" nativeButton={false} render={<Link href="/settings" />}>
+            Go to Settings to sync
+          </Button>
+        ) : (
+          <DrawButton size="lg" />
+        )}
+        {cfg.gradedAttempts < CALIBRATION_ATTEMPTS && !empty && (
+          <p className="text-center text-xs text-muted-foreground">
+            {CALIBRATION_ATTEMPTS - cfg.gradedAttempts} attempts left in calibration — your
+            rating moves fast until then, so be honest about results.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+        )}
+      </div>
     </div>
+  );
+}
+
+function Stat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Target;
+  label: string;
+  value: string;
+}) {
+  return (
+    <Card>
+      <CardContent className="flex items-center gap-3 py-4">
+        <Icon className="size-4 shrink-0 text-muted-foreground" />
+        <div className="min-w-0">
+          <div className="text-xs text-muted-foreground">{label}</div>
+          <div className="truncate text-sm font-medium">{value}</div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

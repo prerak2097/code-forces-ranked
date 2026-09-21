@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: cf-ranked-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cfranked
+      POSTGRES_PASSWORD: cfranked
+      POSTGRES_DB: cfranked
+    ports:
+      - "5433:5432"
+    volumes:
+      - cf-ranked-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cfranked -d cfranked"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  cf-ranked-pgdata:
