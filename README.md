@@ -15,6 +15,9 @@ Codeforces API.
 
 ---
 
+## Practice Mode
+<img width="1539" height="1049" alt="Screenshot-20260923-12:25:38" src="https://github.com/user-attachments/assets/e52aff4b-2d6f-43c2-8595-21280248cf1b" />
+
 ## Contents
 
 - [Features](#features)
@@ -333,6 +336,11 @@ small script that imports `applyOutcome` and prints the scenarios in the table a
 so the behavioural change is visible in the PR description.
 
 ---
+
+## Screen Shots
+<img width="1544" height="547" alt="Screenshot-20260923-12:24:56" src="https://github.com/user-attachments/assets/ae299070-b726-4015-bef4-54a152cca67e" />
+<img width="786" height="1262" alt="Screenshot-20260923-12:24:13" src="https://github.com/user-attachments/assets/4e0b6785-8d47-4388-ace7-0ed322a6bcb7" />
+<img width="2545" height="1268" alt="Screenshot-20260923-12:23:25" src="https://github.com/user-attachments/assets/84e087c4-cec1-4963-94f6-0bd597385cad" />
 
 ## License
 
